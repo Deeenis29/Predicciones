@@ -1,0 +1,6 @@
+El objetivo principal es.
+
+Conocer y aplicar los conceptos del paradigma de la programación orientada a objetos,
+para la correcta identificación estructural de la codificación del programa por medio
+del lenguaje de programación de Java y utilizando el ide de Anaconda Navigator.
+

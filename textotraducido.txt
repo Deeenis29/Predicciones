@@ -1,0 +1,1 @@
+Inteligencia artificial, es la simulación de procesos de inteligencia humana por máquinas, especialmente los sistemas informáticos. Estos procesos incluyen el aprendizaje, la adquisición de información y reglas para usar la información, el razonamiento, el uso de las reglas para llegar a conclusiones aproximadas y una autocorrección.

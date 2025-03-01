@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Virtual STICH22</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Asistente Virtual STICH22</h1>
+        <div class="buttons">
+            <button id="iniciarBtn">Iniciar</button>
+            <button id="escucharBtn">Escuchar</button>
+            <button id="reiniciarBtn">Reiniciar</button>
+            <button id="detenerBtn">Detener</button>
+        </div>
+        
+        <div class="image-upload-container">
+            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+            <button class="upload-btn" onclick="document.getElementById('imageUpload').click()">Subir Imagen</button>
+            <div id="imagePreview"></div>
+        </div>
+        
+        <div id="respuesta">Presiona "Iniciar" para comenzar.</div>
+    </div>
+
+    <script>
+        document.getElementById('iniciarBtn').addEventListener('click', function() {
+            fetch('/iniciar', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('respuesta').textContent = data.mensaje;
+            });
+        });
+
+        document.getElementById('escucharBtn').addEventListener('click', function() {
+            document.getElementById('respuesta').textContent = "Escuchando...";
+            fetch('/procesar', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('respuesta').textContent = data.mensaje;
+            });
+        });
+
+        document.getElementById('reiniciarBtn').addEventListener('click', function() {
+            fetch('/reiniciar', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('respuesta').textContent = data.mensaje;
+            });
+        });
+
+        document.getElementById('detenerBtn').addEventListener('click', function() {
+            fetch('/detener', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('respuesta').textContent = data.mensaje;
+            });
+        });
+
+        // Image upload and recognition functionality
+        document.getElementById('imageUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Display "Processing..." message
+                document.getElementById('respuesta').textContent = "Procesando imagen...";
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Display preview
+                    const preview = document.getElementById('imagePreview');
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    
+                    // Send to server
+                    sendImageToServer(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function sendImageToServer(imageData) {
+            fetch('/procesar_imagen', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('respuesta').textContent = data.error;
+                } else {
+                    // Display results
+                    document.getElementById('respuesta').textContent = data.mensaje;
+                    
+                    // If you want to display the detections in a more structured way
+                    if (data.detecciones && data.detecciones.length > 0) {
+                        let resultsHTML = '<div class="detection-results"><strong>Detecciones:</strong><ul>';
+                        data.detecciones.forEach(item => {
+                            resultsHTML += `<li>${item}</li>`;
+                        });
+                        resultsHTML += '</ul></div>';
+                        
+                        // Append to response area or another designated area
+                        document.getElementById('imagePreview').innerHTML += resultsHTML;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('respuesta').textContent = 'Error al procesar la imagen';
+            });
+        }
+    </script>
+</body>
+</html>

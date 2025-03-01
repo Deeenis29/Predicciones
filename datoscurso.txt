@@ -1,0 +1,6 @@
+El nombre del curso es Programación orientada a objetos
+Pertenece a la carrera profesional de Desarrollo de software con inteligencia artificial
+Del semestre 2
+Está a cargo del Instructor Wilbert Vilcahuamán Mamani
+El tema que vamos a trabajar hoy día es el paradigma de la programación orientada a objetos
+Correspondiente a la unidad 1
