@@ -3,124 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente Virtual STICH22</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <title>Stich22 - Asistente Virtual</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2ecc71;
+            --secondary-dark: #27ae60;
+            --bg-dark: #2c3e50;
+            --text-light: #ecf0f1;
+            --text-dark: #34495e;
+            --danger: #e74c3c;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--text-dark);
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .voice-section, .vision-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--primary-dark);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 5px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--secondary-dark);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .chat-area {
+            height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            max-width: 80%;
+        }
+        
+        .user-message {
+            background-color: var(--primary);
+            color: white;
+            margin-left: auto;
+            border-radius: 12px 12px 0 12px;
+        }
+        
+        .bot-message {
+            background-color: #e9e9e9;
+            color: var(--text-dark);
+            border-radius: 12px 12px 12px 0;
+        }
+        
+        .camera-container {
+            margin-top: 20px;
+        }
+        
+        #video {
+            width: 100%;
+            max-height: 240px;
+            background-color: #000;
+            border-radius: 4px;
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        .results {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+        
+        .listening {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .detection-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #e6e6e6;
+            border-radius: 4px;
+        }
+        
+        .status {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+        
+        .preview-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        #imagePreview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+            display: none;
+            margin: 10px auto;
+            border: 2px solid #ddd;
+        }
+        
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .tab {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            cursor: pointer;
+            background-color: #f5f5f5;
+        }
+        
+        .tab.active {
+            background-color: white;
+            font-weight: bold;
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 0 4px 4px 4px;
+            background-color: white;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Asistente Virtual STICH22</h1>
-        <div class="buttons">
-            <button id="iniciarBtn">Iniciar</button>
-            <button id="escucharBtn">Escuchar</button>
-            <button id="reiniciarBtn">Reiniciar</button>
-            <button id="detenerBtn">Detener</button>
-        </div>
+        <header>
+            <h1>Stich22 - Asistente Virtual</h1>
+            <p>Tu asistente inteligente con reconocimiento de voz y visión</p>
+        </header>
         
-        <div class="image-upload-container">
-            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
-            <button class="upload-btn" onclick="document.getElementById('imageUpload').click()">Subir Imagen</button>
-            <div id="imagePreview"></div>
-        </div>
-        
-        <div id="respuesta">Presiona "Iniciar" para comenzar.</div>
-    </div>
-
-    <script>
-        document.getElementById('iniciarBtn').addEventListener('click', function() {
-            fetch('/iniciar', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('respuesta').textContent = data.mensaje;
-            });
-        });
-
-        document.getElementById('escucharBtn').addEventListener('click', function() {
-            document.getElementById('respuesta').textContent = "Escuchando...";
-            fetch('/procesar', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('respuesta').textContent = data.mensaje;
-            });
-        });
-
-        document.getElementById('reiniciarBtn').addEventListener('click', function() {
-            fetch('/reiniciar', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('respuesta').textContent = data.mensaje;
-            });
-        });
-
-        document.getElementById('detenerBtn').addEventListener('click', function() {
-            fetch('/detener', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('respuesta').textContent = data.mensaje;
-            });
-        });
-
-        // Image upload and recognition functionality
-        document.getElementById('imageUpload').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                // Display "Processing..." message
-                document.getElementById('respuesta').textContent = "Procesando imagen...";
+        <div class="app-container">
+            <div class="voice-section">
+                <h2 class="section-title">Asistente por Voz</h2>
+                <div class="chat-area" id="chatArea">
+                    <div class="message bot-message">Hola, soy Stich22. ¿En qué puedo ayudarte hoy?</div>
+                </div>
+                <button class="btn btn-primary" id="startButton">Iniciar Asistente</button>
+                <button class="btn btn-secondary" id="listenButton">Escuchar</button>
+                <button class="btn btn-danger" id="stopButton">Detener</button>
+                <div class="status" id="status">Listo para iniciar</div>
+            </div>
+            
+            <div class="vision-section">
+                <h2 class="section-title">Reconocimiento Visual</h2>
                 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Display preview
-                    const preview = document.getElementById('imagePreview');
-                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-                    
-                    // Send to server
-                    sendImageToServer(e.target.result);
-                };
-                reader.readAsDataURL(file);
+                <div class="tabs">
+                    <div class="tab active" data-tab="camera">Cámara</div>
+                    <div class="tab" data-tab="upload">Subir Imagen</div>
+                </div>
+                
+                <div class="tab-content active" id="camera-tab">
+                    <div class="camera-container">
+                        <video id="video" autoplay></video>
+                        <canvas id="canvas"></canvas>
+                    </div>
+                    <button class="btn btn-primary" id="startCameraButton">Iniciar Cámara</button>
+                    <button class="btn btn-secondary" id="captureButton">Capturar Imagen</button>
+                </div>
+                
+                <div class="tab-content" id="upload-tab">
+                    <div class="preview-container">
+                        <img id="imagePreview" src="#" alt="Vista previa de imagen">
+                    </div>
+                    <div class="upload-btn-wrapper">
+                        <button class="btn btn-primary">Seleccionar Imagen</button>
+                        <input type="file" id="imageUpload" accept="image/*">
+                    </div>
+                    <button class="btn btn-secondary" id="analyzeButton">Analizar Imagen</button>
+                </div>
+                
+                <div class="results" id="resultArea">
+                    <p>Los resultados de la detección aparecerán aquí.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        const chatArea = document.getElementById('chatArea');
+        const startButton = document.getElementById('startButton');
+        const listenButton = document.getElementById('listenButton');
+        const stopButton = document.getElementById('stopButton');
+        const status = document.getElementById('status');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startCameraButton = document.getElementById('startCameraButton');
+        const captureButton = document.getElementById('captureButton');
+        const resultArea = document.getElementById('resultArea');
+        const imageUpload = document.getElementById('imageUpload');
+        const imagePreview = document.getElementById('imagePreview');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        let mediaStream = null;
+        
+        // Manejo de pestañas
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+        
+        // Funciones para el asistente de voz
+        startButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/iniciar', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                addMessage(data.mensaje, false);
+                status.textContent = "Asistente iniciado";
+            } catch (error) {
+                console.error('Error al iniciar el asistente:', error);
+                status.textContent = "Error al iniciar el asistente";
             }
         });
-
-        function sendImageToServer(imageData) {
-            fetch('/procesar_imagen', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ image: imageData }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById('respuesta').textContent = data.error;
+        
+        listenButton.addEventListener('click', async () => {
+            try {
+                listenButton.classList.add('listening');
+                listenButton.textContent = "Escuchando...";
+                status.textContent = "Escuchando...";
+                
+                const response = await fetch('/escuchar', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                listenButton.classList.remove('listening');
+                listenButton.textContent = "Escuchar";
+                
+                if (data.comando) {
+                    addMessage(data.comando, true);
+                    procesarComando(data.comando);
                 } else {
-                    // Display results
-                    document.getElementById('respuesta').textContent = data.mensaje;
-                    
-                    // If you want to display the detections in a more structured way
-                    if (data.detecciones && data.detecciones.length > 0) {
-                        let resultsHTML = '<div class="detection-results"><strong>Detecciones:</strong><ul>';
-                        data.detecciones.forEach(item => {
-                            resultsHTML += `<li>${item}</li>`;
-                        });
-                        resultsHTML += '</ul></div>';
-                        
-                        // Append to response area or another designated area
-                        document.getElementById('imagePreview').innerHTML += resultsHTML;
-                    }
+                    status.textContent = data.error || "No se pudo entender el comando";
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('respuesta').textContent = 'Error al procesar la imagen';
-            });
+            } catch (error) {
+                console.error('Error al escuchar:', error);
+                listenButton.classList.remove('listening');
+                listenButton.textContent = "Escuchar";
+                status.textContent = "Error al escuchar";
+            }
+        });
+        
+        stopButton.addEventListener('click', () => {
+            addMessage("Cerrando el asistente. ¡Hasta luego!", false);
+            status.textContent = "Asistente detenido";
+        });
+        
+        async function procesarComando(comando) {
+            try {
+                const response = await fetch('/procesar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ comando: comando })
+                });
+                const data = await response.json();
+                addMessage(data.mensaje, false);
+                status.textContent = "Comando procesado";
+            } catch (error) {
+                console.error('Error al procesar el comando:', error);
+                status.textContent = "Error al procesar el comando";
+            }
         }
+        
+        function addMessage(text, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+            messageDiv.textContent = text;
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+        
+        // Funciones para el reconocimiento visual - Cámara
+        startCameraButton.addEventListener('click', async () => {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = mediaStream;
+                captureButton.disabled = false;
+                startCameraButton.textContent = "Cámara Activada";
+            } catch (error) {
+                console.error('Error al acceder a la cámara:', error);
+                resultArea.innerHTML = '<p style="color: red;">Error al acceder a la cámara. Verifica los permisos.</p>';
+            }
+        });
+        
+        captureButton.addEventListener('click', () => {
+            if (!mediaStream) {
+                resultArea.innerHTML = '<p>Por favor, inicia la cámara primero.</p>';
+                return;
+            }
+            
+            // Configurar canvas para capturar la imagen
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convertir a base64
+            const imageData = canvas.toDataURL('image/jpeg');
+            
+            // Enviar la imagen para su procesamiento
+            enviarImagen(imageData);
+        });
+        
+        // Funciones para el reconocimiento visual - Subir Imagen
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.match('image.*')) {
+                resultArea.innerHTML = '<p style="color: red;">Por favor, selecciona un archivo de imagen válido.</p>';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imagePreview.src = event.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        analyzeButton.addEventListener('click', () => {
+            if (imagePreview.src && imagePreview.src !== '#' && imagePreview.style.display !== 'none') {
+                enviarImagen(imagePreview.src);
+            } else {
+                resultArea.innerHTML = '<p>Por favor, selecciona una imagen primero.</p>';
+            }
+        });
+        
+        async function enviarImagen(imageData) {
+            try {
+                resultArea.innerHTML = '<p>Procesando imagen...</p>';
+                
+                const response = await fetch('/procesar_imagen', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: imageData })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultArea.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                    return;
+                }
+                
+                // Mostrar las detecciones
+                resultArea.innerHTML = '<h3>Resultados:</h3>';
+                if (data.detecciones && data.detecciones.length > 0) {
+                    const ul = document.createElement('ul');
+                    data.detecciones.forEach(detection => {
+                        const li = document.createElement('li');
+                        li.className = 'detection-item';
+                        li.textContent = detection;
+                        ul.appendChild(li);
+                    });
+                    resultArea.appendChild(ul);
+                } else {
+                    resultArea.innerHTML += '<p>No se detectaron objetos.</p>';
+                }
+            } catch (error) {
+                console.error('Error al procesar la imagen:', error);
+                resultArea.innerHTML = '<p style="color: red;">Error al procesar la imagen.</p>';
+            }
+        }
+        
+        // Deshabilitar botones hasta que sean necesarios
+        captureButton.disabled = true;
     </script>
 </body>
 </html>

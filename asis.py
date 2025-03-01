@@ -1,37 +1,30 @@
-from flask import Flask, render_template, jsonify, request
-import pyttsx3
-import speech_recognition as sr
-import wikipedia
-import webbrowser
-import datetime
-import os
-import pywhatkit
-import threading
-from PIL import Image
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
-import io
+import requests
 import base64
-from ultralytics import YOLO
+import os
+import datetime
+import webbrowser
+import wikipedia
+import pywhatkit
+from flask import Flask, request, jsonify, render_template
+import speech_recognition as sr
+import pyttsx3
 
 app = Flask(__name__)
 
-# Bloqueo para evitar solapamientos en la función hablar
-speak_lock = threading.Lock()
-
-# Cargar el modelo preentrenado ResNet50
-model = YOLO("yolov8m.pt")
+# Configuración de la API de Azure
+AZURE_ENDPOINT = "https://trainner-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/75354010-a2ff-4a74-82d9-87a62ccaf7ae/classify/iterations/Iteration1/image"
+AZURE_KEY = "2b596BVpBh6IuLayCrmft9GYfnJyuKvLw3dAwQ3as09bcutvqQ1TJQQJ99BBACYeBjFXJ3w3AAAIACOG0Urk"
 
 def hablar(texto):
-    """Convierte texto en voz y lo reproduce."""
-    with speak_lock:
+    """Convierte texto a voz."""
+    try:
         engine = pyttsx3.init()
-        engine.setProperty("rate", 150)
-        engine.setProperty("voice", engine.getProperty("voices")[0].id)
         engine.say(texto)
         engine.runAndWait()
-        engine.stop()
+        return True
+    except Exception as e:
+        print(f"Error en hablar(): {str(e)}")
+        return False
 
 def escuchar():
     """Escucha y reconoce la voz del usuario."""
@@ -49,6 +42,9 @@ def escuchar():
         return None
     except sr.RequestError:
         print("Error en el reconocimiento de voz.")
+        return None
+    except Exception as e:
+        print(f"Error inesperado en escuchar(): {str(e)}")
         return None
 
 @app.route("/")
@@ -74,18 +70,24 @@ def escuchar_route():
 @app.route("/procesar", methods=["POST"])
 def procesar():
     """Procesa el comando del usuario y responde."""
-    comando = escuchar()
+    data = request.get_json()
+    comando = data.get("comando", "")
+    
     if not comando:
         return jsonify({"mensaje": "No entendí, intenta de nuevo."})
-    
+
     respuesta = ""
-    
+
     if "wikipedia" in comando:
         hablar("Buscando en Wikipedia...")
-        comando = comando.replace("buscar en wikipedia", "")
-        resultado = wikipedia.summary(comando, sentences=1)
-        hablar(resultado)
-        respuesta = resultado
+        comando = comando.replace("buscar en wikipedia", "").strip()
+        try:
+            resultado = wikipedia.summary(comando, sentences=1)
+            hablar(resultado)
+            respuesta = resultado
+        except wikipedia.exceptions.PageError:
+            hablar("No encontré información en Wikipedia sobre eso.")
+            respuesta = "No encontré información en Wikipedia sobre eso."
     elif "abre google" in comando:
         hablar("Abriendo Google")
         webbrowser.open("https://www.google.com")
@@ -105,59 +107,46 @@ def procesar():
         respuesta = f"Reproduciendo {cancion} en YouTube."
     elif "detener" in comando or "salir" in comando:
         hablar("Cerrando el asistente. Hasta luego.")
-        os._exit(0)
+        respuesta = "Cerrando el asistente. Hasta luego."
     else:
         hablar("No reconozco ese comando.")
         respuesta = "No reconozco ese comando."
-    
+
     return jsonify({"mensaje": respuesta})
 
-@app.route("/procesar_imagen", methods=["POST"])
+@app.route('/procesar_imagen', methods=['POST'])
 def procesar_imagen():
-    """Procesa una imagen y devuelve la clasificación con YOLOv8."""
     try:
-        image_data = request.json.get('image')
+        data = request.get_json()
+        image_data = data.get("image")  # Recibe la imagen en base64
+
         if not image_data:
-            return jsonify({"error": "No se recibió imagen"})
+            return jsonify({"error": "No se recibió una imagen"}), 400
 
-        if 'base64,' in image_data:
-            image_data = image_data.split('base64,')[1]
+        # Decodificar la imagen base64 a binario
+        image_binary = base64.b64decode(image_data.split(",")[1])
 
-        image_bytes = base64.b64decode(image_data)
-        image = Image.open(io.BytesIO(image_bytes))
+        # Enviar la imagen a la API de Azure
+        headers = {
+            "Prediction-Key": AZURE_KEY,
+            "Content-Type": "application/octet-stream"
+        }
 
-        if image is None or image.size == (0, 0):
-            return jsonify({"error": "La imagen es inválida o está vacía."})
+        response = requests.post(AZURE_ENDPOINT, headers=headers, data=image_binary)
+        result = response.json()
 
-        # Convertir a formato compatible con OpenCV
-        image_cv = np.array(image.convert("RGB"))  # Convertir a RGB
-        results = model(image_cv)  # Pasar la imagen a YOLOv8
+        # Extraer predicciones si están disponibles
+        predictions = result.get("predictions", [])
+        detecciones = [f"{p['tagName']}: {p['probability']:.2%}" for p in predictions]
 
-        detections = []
-        for result in results:
-            for box in result.boxes:
-                class_id = int(box.cls[0])
-                class_name = result.names[class_id]  # Obtener el nombre del objeto detectado
-                detections.append(class_name)
-
-        if detections:
-            result_text = "He detectado: " + ", ".join(detections)
-            hablar(result_text)
-            return jsonify({"mensaje": result_text, "detecciones": detections})
-        else:
-            return jsonify({"mensaje": "No se detectó ningún objeto en la imagen."})
+        return jsonify({"mensaje": "Imagen procesada", "detecciones": detecciones})
 
     except Exception as e:
-        print(f"Error procesando la imagen: {str(e)}")
-        return jsonify({"error": f"Error al procesar la imagen: {str(e)}"})
-
+        return jsonify({"error": f"Error procesando la imagen: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    hablar("Iniciando el asistente.")
-    app.run(debug=True, threaded=True)
-
-
-
-
-
-
+    # Asegurar que existe el directorio de templates
+    os.makedirs("templates", exist_ok=True)
+    
+    # Ejecutar la aplicación
+    app.run(debug=True)
